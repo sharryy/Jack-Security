@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Women Security</string>
+    <string name="fetching_contacts">Fetching Contacts... Please Wait</string>
+</resources>

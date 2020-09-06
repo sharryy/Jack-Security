@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "512593694153",
+    "firebase_url": "https://usama-jack.firebaseio.com",
+    "project_id": "usama-jack",
+    "storage_bucket": "usama-jack.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:512593694153:android:e1842d177ef519776bec18",
+        "android_client_info": {
+          "package_name": "com.jack.usama"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "512593694153-qqdcd1n6u3g6pclh4nik8pb3n837lul6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBlQqWEAGD1aMrC5llN0LZezUO1QssW-P8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "512593694153-qqdcd1n6u3g6pclh4nik8pb3n837lul6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
