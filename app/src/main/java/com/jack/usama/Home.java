@@ -14,12 +14,11 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.location.Address;
 import android.location.Geocoder;
-import android.location.Location;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.telephony.SmsManager;
-import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -29,7 +28,6 @@ import androidx.core.app.ActivityCompat;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.tasks.OnSuccessListener;
 
 import java.io.IOException;
 import java.util.List;
@@ -56,6 +54,7 @@ public class Home extends Activity implements SensorEventListener {
     private List<Address> addresses;
     private String address;
     private PendingIntent sentPI, deliveredPI;
+    private BroadcastReceiver broadcastReceiver, broadcastReceiver1;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -84,15 +83,12 @@ public class Home extends Activity implements SensorEventListener {
         }
 
         button = findViewById(R.id.button);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                button.setText(R.string.fetching_contacts);
-                startActivity(new Intent(Home.this, Edit.class));
-            }
+        button.setOnClickListener(v -> {
+            button.setText(R.string.fetching_contacts);
+            startActivity(new Intent(Home.this, Edit.class));
         });
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             final AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setMessage("Your GPS seems to be disabled, do you want to enable it?")
                     .setCancelable(false)
@@ -106,29 +102,28 @@ public class Home extends Activity implements SensorEventListener {
             alert.show();
             return;
         }
-        fusedLocationProviderClient.getLastLocation().addOnSuccessListener(new OnSuccessListener<Location>() {
-            @Override
-            public void onSuccess(Location location) {
-                if (location != null) {
-                    try {
-                        latitudes = location.getLatitude();
-                        longitudes = location.getLongitude();
-                        geocoder = new Geocoder(Home.this, Locale.getDefault());
-                        addresses = geocoder.getFromLocation(latitudes, longitudes, 1);
-                        address = addresses.get(0).getAddressLine(0);
-                    } catch (IOException e) {
-                        Toast.makeText(Home.this, "Unknown Error in Getting Location", Toast.LENGTH_SHORT).show();
-                    }
+
+        fusedLocationProviderClient.getLastLocation().addOnSuccessListener(location -> {
+            if (location != null) {
+                try {
+                    latitudes = location.getLatitude();
+                    longitudes = location.getLongitude();
+                    geocoder = new Geocoder(Home.this, Locale.getDefault());
+                    addresses = geocoder.getFromLocation(latitudes, longitudes, 1);
+                    address = addresses.get(0).getAddressLine(0);
+                } catch (IOException e) {
+                    Toast.makeText(Home.this, "Unknown Error in Getting Location", Toast.LENGTH_SHORT).show();
                 }
             }
         });
+
         String SENT = "SMS_SENT";
         String DELIVERED = "SMS_DELIVERED";
 
         sentPI = PendingIntent.getBroadcast(this, 0, new Intent(SENT), 0);
         deliveredPI = PendingIntent.getBroadcast(this, 0, new Intent(DELIVERED), 0);
 
-        registerReceiver(new BroadcastReceiver() {
+        broadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 switch (getResultCode()) {
@@ -149,12 +144,13 @@ public class Home extends Activity implements SensorEventListener {
                         break;
                 }
             }
+        };
 
-        }, new IntentFilter(SENT));
+        registerReceiver(broadcastReceiver, new IntentFilter(SENT));
 
-        registerReceiver(new BroadcastReceiver() {
+        broadcastReceiver1 = new BroadcastReceiver() {
             @Override
-            public void onReceive(Context arg0, Intent arg1) {
+            public void onReceive(Context context, Intent intent) {
                 switch (getResultCode()) {
                     case Activity.RESULT_OK:
                         Toast.makeText(getBaseContext(), "SMS delivered", Toast.LENGTH_SHORT).show();
@@ -164,12 +160,15 @@ public class Home extends Activity implements SensorEventListener {
                         break;
                 }
             }
-        }, new IntentFilter(DELIVERED));
+        };
+        registerReceiver(broadcastReceiver1, new IntentFilter(DELIVERED));
     }
 
     @Override
     protected void onStop() {
         super.onStop();
+        unregisterReceiver(broadcastReceiver);
+        unregisterReceiver(broadcastReceiver1);
     }
 
     @Override
@@ -194,6 +193,13 @@ public class Home extends Activity implements SensorEventListener {
                     SmsManager smsManager = SmsManager.getDefault();
                     smsManager.sendTextMessage(sessionManager.getContactNumber(), null, messageToBeSent, sentPI, deliveredPI);
                     vibrator.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE));
+
+                    Intent callIntent = new Intent(Intent.ACTION_CALL);
+                    callIntent.setData(Uri.parse("tel:" + sessionManager.getContactNumber()));
+                    if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
+                        return;
+                    }
+                    startActivity(callIntent);
                 }
             }
         }

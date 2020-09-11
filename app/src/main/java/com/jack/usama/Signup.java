@@ -86,20 +86,17 @@ public class Signup extends AppCompatActivity {
                             User user = new User(name, email, password);
                             FirebaseDatabase.getInstance().getReference("User's Database")
                                     .child(FirebaseAuth.getInstance().getCurrentUser().getUid())
-                                    .setValue(user).addOnCompleteListener(new OnCompleteListener<Void>() {
-                                @Override
-                                public void onComplete(@NonNull Task<Void> task) {
-                                    if (task.isSuccessful()) {
-                                        sessionManager.setUsername(name);
-                                        Toast.makeText(Signup.this, "Registered Successfully", Toast.LENGTH_SHORT).show();
-                                        Intent intent = new Intent(getApplicationContext(), Signin.class);
-                                        startActivity(intent);
-                                        finish();
-                                    } else {
-                                        Toast.makeText(Signup.this, "Error: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                                    }
-                                }
-                            });
+                                    .setValue(user).addOnCompleteListener(task1 -> {
+                                        if (task1.isSuccessful()) {
+                                            sessionManager.setUsername(name);
+                                            Toast.makeText(Signup.this, "Registered Successfully", Toast.LENGTH_SHORT).show();
+                                            Intent intent = new Intent(getApplicationContext(), Signin.class);
+                                            startActivity(intent);
+                                            finish();
+                                        } else {
+                                            Toast.makeText(Signup.this, "Error: " + task1.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                                        }
+                                    });
                         }
                     }
                 }).addOnFailureListener(new OnFailureListener() {
