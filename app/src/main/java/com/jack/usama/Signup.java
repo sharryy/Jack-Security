@@ -19,6 +19,8 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
+import dmax.dialog.SpotsDialog;
+
 public class Signup extends AppCompatActivity {
     private EditText name_SignUp;
     private EditText email_SignUp;
@@ -48,6 +50,10 @@ public class Signup extends AppCompatActivity {
         btn_SignUp.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
+                final android.app.AlertDialog waitingDialog = new SpotsDialog.Builder().setContext(Signup.this).build();
+                waitingDialog.show();
+
                 final String name = name_SignUp.getText().toString().trim();
                 final String email = email_SignUp.getText().toString().trim();
                 final String password = password_SignUp.getText().toString().trim();
@@ -91,9 +97,11 @@ public class Signup extends AppCompatActivity {
                                             sessionManager.setUsername(name);
                                             Toast.makeText(Signup.this, "Registered Successfully", Toast.LENGTH_SHORT).show();
                                             Intent intent = new Intent(getApplicationContext(), Signin.class);
+                                            waitingDialog.dismiss();
                                             startActivity(intent);
                                             finish();
                                         } else {
+                                            waitingDialog.dismiss();
                                             Toast.makeText(Signup.this, "Error: " + task1.getException().getMessage(), Toast.LENGTH_SHORT).show();
                                         }
                                     });
@@ -102,6 +110,7 @@ public class Signup extends AppCompatActivity {
                 }).addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
+                        waitingDialog.dismiss();
                         Toast.makeText(Signup.this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });

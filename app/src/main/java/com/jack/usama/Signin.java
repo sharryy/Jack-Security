@@ -17,6 +17,8 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 
+import dmax.dialog.SpotsDialog;
+
 public class Signin extends AppCompatActivity {
     private EditText email_SignIn;
     private EditText password_SignIn;
@@ -40,6 +42,10 @@ public class Signin extends AppCompatActivity {
         button_SignIn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
+                final android.app.AlertDialog waitingDialog = new SpotsDialog.Builder().setContext(Signin.this).build();
+                waitingDialog.show();
+
                 String email = email_SignIn.getText().toString().trim();
                 String password = password_SignIn.getText().toString().trim();
 
@@ -61,15 +67,18 @@ public class Signin extends AppCompatActivity {
                             sessionManager.setLogin(true);
                             Intent intent = new Intent(getApplicationContext(), Home.class);
                             Toast.makeText(Signin.this, "Logged In Successfully", Toast.LENGTH_SHORT).show();
+                            waitingDialog.dismiss();
                             startActivity(intent);
                             finish();
                         } else {
+                            waitingDialog.dismiss();
                             Toast.makeText(Signin.this, "Incorrect Email or Password!", Toast.LENGTH_SHORT).show();
                         }
                     }
                 }).addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
+                        waitingDialog.dismiss();
                         Toast.makeText(Signin.this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });

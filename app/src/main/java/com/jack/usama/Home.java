@@ -14,8 +14,10 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.location.Address;
 import android.location.Geocoder;
+import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.telephony.SmsManager;
@@ -32,9 +34,11 @@ import com.google.android.gms.location.LocationServices;
 import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
+import java.util.Random;
+
+import dmax.dialog.SpotsDialog;
 
 public class Home extends Activity implements SensorEventListener {
-    public static final String TAG = Home.class.getSimpleName();
     private Button button;
     private TextView name, number, message;
     private SessionManager sessionManager;
@@ -55,6 +59,10 @@ public class Home extends Activity implements SensorEventListener {
     private String address;
     private PendingIntent sentPI, deliveredPI;
     private BroadcastReceiver broadcastReceiver, broadcastReceiver1;
+    private String AudioSavePathInDevice = null;
+    private MediaRecorder mediaRecorder;
+    private Random random;
+    private String RandomAudioFileName = "ABCDEFGHIJKLMNOP";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -63,6 +71,8 @@ public class Home extends Activity implements SensorEventListener {
         name = findViewById(R.id.textViewContactName);
         number = findViewById(R.id.textViewContactNumber);
         message = findViewById(R.id.textViewMessage);
+
+        random = new Random();
 
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
         sessionManager = new SessionManager(this);
@@ -84,8 +94,13 @@ public class Home extends Activity implements SensorEventListener {
 
         button = findViewById(R.id.button);
         button.setOnClickListener(v -> {
+            final android.app.AlertDialog waitingDialog = new SpotsDialog.Builder().setContext(Home.this).build();
+            waitingDialog.show();
             button.setText(R.string.fetching_contacts);
-            startActivity(new Intent(Home.this, Edit.class));
+            Intent intent = new Intent(Home.this, Edit.class);
+            waitingDialog.dismiss();
+            startActivity(intent);
+
         });
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -194,6 +209,20 @@ public class Home extends Activity implements SensorEventListener {
                     smsManager.sendTextMessage(sessionManager.getContactNumber(), null, messageToBeSent, sentPI, deliveredPI);
                     vibrator.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE));
 
+                    AudioSavePathInDevice = Environment.getExternalStorageDirectory().getAbsolutePath() + "/" +
+                                    CreateRandomAudioFileName() + "AudioRecording.3gp";
+
+                    MediaRecorderReady();
+
+                    try {
+                        mediaRecorder.prepare();
+                        mediaRecorder.start();
+                    } catch (IllegalStateException | IOException e) {
+                        Toast.makeText(this, "Unable to Record Voice", Toast.LENGTH_SHORT).show();
+                    }
+
+                    Toast.makeText(Home.this, "Recording started", Toast.LENGTH_LONG).show();
+
                     Intent callIntent = new Intent(Intent.ACTION_CALL);
                     callIntent.setData(Uri.parse("tel:" + sessionManager.getContactNumber()));
                     if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
@@ -209,6 +238,25 @@ public class Home extends Activity implements SensorEventListener {
         lastZ = currentZ;
 
         itIsNotFirstTime = true;
+    }
+
+    private String CreateRandomAudioFileName() {
+        StringBuilder stringBuilder = new StringBuilder(5);
+        int i = 0;
+        while (i < 5) {
+            stringBuilder.append(RandomAudioFileName.charAt(random.nextInt(RandomAudioFileName.length())));
+            i++;
+        }
+        return stringBuilder.toString();
+    }
+
+    private void MediaRecorderReady() {
+        mediaRecorder = new MediaRecorder();
+        mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        mediaRecorder.setMaxDuration(60000);
+        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+        mediaRecorder.setAudioEncoder(MediaRecorder.OutputFormat.AMR_NB);
+        mediaRecorder.setOutputFile(AudioSavePathInDevice);
     }
 
     @Override

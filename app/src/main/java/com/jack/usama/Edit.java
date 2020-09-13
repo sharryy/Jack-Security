@@ -51,8 +51,7 @@ public class Edit extends AppCompatActivity implements AdapterView.OnItemSelecte
 
     public void readContacts() {
         ContentResolver cr = getContentResolver();
-        Cursor cur = cr.query(ContactsContract.Contacts.CONTENT_URI,
-                null, null, null, null);
+        Cursor cur = cr.query(ContactsContract.Contacts.CONTENT_URI, null, null, null, null);
 
         if (cur.getCount() > 0) {
             while (cur.moveToNext()) {
